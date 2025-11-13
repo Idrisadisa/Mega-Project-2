@@ -1,0 +1,14 @@
+# General
+*.log
+*.tmp
+*.swp
+
+# Node / Java / Python / etc. can be added later
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+terraform.tfvars
+*.tfplan
