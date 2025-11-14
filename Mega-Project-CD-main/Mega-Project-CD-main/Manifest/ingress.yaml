@@ -22,5 +22,5 @@ spec:
                   number: 80
   tls:
     - hosts:
-        - www.shackverse.co
-      secretName: shackverse-co-tls
+        - www.hkhpros.xyz
+      secretName: hkhpros-xyz-tls
