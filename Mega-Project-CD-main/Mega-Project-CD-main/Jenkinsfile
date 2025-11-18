@@ -1,23 +1,61 @@
 pipeline {
     agent any
 
+    environment {
+        K8S_NAMESPACE = 'webapps'
+    }
+
     stages {
         stage('Git Checkout') {
             steps {
-                git branch: 'main', credentialsId: 'git', url: 'https://github.com/idrisadisa/Mega-Project-CD.git'
+                git branch: 'main', url: 'https://github.com/Idrisadisa/Mega-Project-2.git'
             }
         }
         
         stage('Kubernetes Deployment') {
             steps {
-                withKubeConfig(caCertificate: '', clusterName: 'devopsshack-cluster', contextName: '', credentialsId: 'k8-token', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://952FB702C508F688D873376083B31DF5.gr7.ap-south-1.eks.amazonaws.com') {
-                    sh "kubectl apply -f Manifest/manifest.yaml -n webapps"
-                    sh "kubectl apply -f Manifest/HPA.yaml "
-                    sleep 30
-                    sh "kubectl get pods -n webapps"
-                    sh "kubectl get service -n webapps"
+                // Adjust this path if your Manifest/ folder is in a different place
+                dir('Mega-Project-CD-main/Mega-Project-CD-main') {
+                    withKubeConfig(
+                        caCertificate: '',
+                        clusterName: 'powerdevops-cluster',
+                        contextName: '',
+                        credentialsId: 'k8-token',       
+                        namespace: env.K8S_NAMESPACE,
+                        restrictKubeConfigAccess: false,
+                        serverUrl: 'https://7CE7241931D96B7E1FC788FD5B9644A8.gr7.us-east-1.eks.amazonaws.com'
+                    ) {
+                        sh '''
+                          set -e
+
+                          echo "Applying Kubernetes manifests..."
+                          kubectl apply -n webapps -f Manifest/manifest.yaml
+                          kubectl apply -n webapps -f Manifest/HPA.yaml
+                         
+                          echo "Waiting for pods to become Ready..."
+                          sleep 30
+
+                          echo "Rollout status for bankapp deployment:"
+                          kubectl rollout status deploy/bankapp -n webapps || true
+
+                          echo "Current Pods:"
+                          kubectl get pods -n webapps
+
+                          echo "Current Services:"
+                          kubectl get svc -n webapps
+                        '''
+                    }
                 }
             }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ CD pipeline succeeded – bankapp deployed to EKS (namespace: webapps).'
+        }
+        failure {
+            echo '❌ CD pipeline FAILED – check Jenkins logs and `kubectl get events -n webapps`.'
         }
     }
 }
